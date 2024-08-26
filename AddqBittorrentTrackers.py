@@ -185,5 +185,6 @@ if __name__ == "__main__":
 	client = qbit_login(args.host, args.port, args.username, args.password)
 	
 	# WIP
-	torrent_trackers = inject_trackers(client, "9857b6dd23581be8157d6e5dbf1435818fd6fde3")
+	hash = ""
+	torrent_trackers = inject_trackers(client, hash)
 	print(torrent_trackers)
