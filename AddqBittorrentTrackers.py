@@ -25,6 +25,7 @@ live_trackers_list_urls = [
 ########## IMPORTS ##########
 import qbittorrentapi # type: ignore
 import requests # type: ignore
+import argparse # type: ignore
 ########## IMPORTS ##########
 
 ########## VARIABLES ##########
@@ -36,6 +37,26 @@ emptycategory=0
 ########## VARIABLES ##########
 
 ########## FUNCTIONS ##########
+
+def qbit_login(host, port, username, password):
+	# instantiate a Client using the appropriate WebUI configuration
+	conn_info = dict(
+		host=host,
+		port=port,
+		username=username,
+		password=password,
+	)
+	qbt_client = qbittorrentapi.Client(**conn_info)
+
+	# the Client will automatically acquire/maintain a logged-in state
+	# in line with any request. therefore, this is not strictly necessary;
+	# however, you may want to test the provided login credentials.
+	try:
+		qbt_client.auth_log_in()
+	except qbittorrentapi.LoginFailed as e:
+		print(e)
+
+	return qbt_client
 
 def generate_trackers_list():
 	live_trackers_list = []
@@ -111,4 +132,58 @@ def generate_trackers_list():
 
 	return live_trackers_list
 
-# def inject_trackers():
+def inject_trackers(client, hash):
+	print("\e[0;36;1mInjecting... \e[0;36m")
+
+	torrent_trackers = []
+	for tracker in client.torrents_trackers(torrent_hash=hash):
+		if tracker.url.startswith("** ["):
+			continue
+		torrent_trackers.append(tracker.url)
+
+	return torrent_trackers
+
+# main function
+if __name__ == "__main__":
+	parser = argparse.ArgumentParser(
+		prog='AddqBittorrentTrackers',
+		description='Add trackers to torrents in qBittorrent',
+	)
+	parser.add_argument(
+		'-H',
+		'--host',
+		default=qbt_host,
+		help="Host on which qBittorrent runs",
+	)
+	parser.add_argument(
+		'-p',
+		'--port',
+		default=qbt_port,
+		help="Port used to access the Web UI",
+	)
+	parser.add_argument(
+		'-U',
+		'--username',
+		default=qbt_username,
+		help="Username to access to Web UI",
+	)
+	parser.add_argument(
+		'-P',
+		'--password',
+		default=qbt_password,
+		help="Password to access to Web UI",
+	)
+	parser.add_argument(
+		'--debug',
+		action="store_true",
+		default=False,
+		help="Print debug statements instead of taking action",
+	)
+	args = parser.parse_args()
+
+	# Login
+	client = qbit_login(args.host, args.port, args.username, args.password)
+	
+	# WIP
+	torrent_trackers = inject_trackers(client, "9857b6dd23581be8157d6e5dbf1435818fd6fde3")
+	print(torrent_trackers)
